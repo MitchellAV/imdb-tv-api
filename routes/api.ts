@@ -130,12 +130,13 @@ router.get(
           imdb_seasons_promises.push(imdb_season_info);
         }
         let imdb_seasons = await Promise.all(imdb_seasons_promises);
+        let imdb_episodes: OmdbEpisodeType[] = [];
 
-        const imdb_episodes_promises = [];
         for (let index = 1; index <= imdb_seasons.length; index++) {
           let current_season = imdb_seasons[index - 1];
           const { Episodes: episodes, Season: season_number } = current_season;
           if (episodes) {
+            let imdb_episodes_promises = [];
             for (let j = 0; j < episodes.length; j++) {
               const { Episode: episode_number } = episodes[j];
 
@@ -146,9 +147,9 @@ router.get(
               );
               imdb_episodes_promises.push(imdb_episode_info);
             }
+            imdb_episodes.push(...(await Promise.all(imdb_episodes_promises)));
           }
         }
-        let imdb_episodes = await Promise.all(imdb_episodes_promises);
         // console.log(imdb_seasons);
         imdb_episodes.forEach((episode) => {
           const {
@@ -157,6 +158,7 @@ router.get(
             imdbRating,
             imdbVotes,
           } = episode;
+          console.log(imdbRating);
 
           imdb_episode_map.set(`${season_number}-${episode_number}`, {
             rating: parseFloat(imdbRating),
@@ -187,17 +189,24 @@ router.get(
         const { season_number, episodes } = season;
         if (episodes) {
           episodes.forEach((ep) => {
-            let { episode_number } = ep;
+            let { episode_number, vote_average, vote_count } = ep;
             const ep_map_index = `${season_number}-${episode_number}`;
-            const imdb_episode_rating = imdb_episode_map.get(ep_map_index);
-            if (imdb_episode_rating && !isNaN(imdb_episode_rating.rating)) {
-              console.log(imdb_episode_rating);
-              ep.vote_average = imdb_episode_rating.rating;
-              ep.vote_count = imdb_episode_rating.votes;
+            const imdb_episode_info = imdb_episode_map.get(ep_map_index);
+            if (imdb_episode_info && !isNaN(imdb_episode_info.rating)) {
+              const combined_vote_count = vote_count + imdb_episode_info.votes;
+              const weight_vote_average =
+                (vote_count * vote_average +
+                  imdb_episode_info.votes * imdb_episode_info.rating) /
+                combined_vote_count;
+              ep.vote_average = weight_vote_average;
+              ep.vote_count = combined_vote_count;
+            } else {
+              console.log(ep_map_index, imdb_episode_info);
             }
           });
         }
       });
+      console.log(imdb_id);
 
       const combinedData = {
         show_info: tv_show_info,
