@@ -1,19 +1,13 @@
-import express, { NextFunction, Request, Response } from "express";
 import axios from "axios";
+import express, { NextFunction, Request, Response } from "express";
 import {
-  EpisodesType,
-  ErrorType,
-  ExternalIDsType,
-  IMDBIDType,
-  ImdbSeasonType,
-  IMDBShowInfoType,
-  OmdbEpisodeType,
-  OmdbSeasonType,
-  SearchType,
-  SeasonType,
-  ShowType,
-} from "../util/types";
-require("dotenv").config();
+  get_imdb_id,
+  get_imdb_season_info,
+  get_imdb_show_info,
+  get_tmdb_id,
+} from "../util/functions/api-functions";
+import { EpisodesType, ErrorType, SearchType, SeasonType } from "../util/types";
+
 const router = express.Router();
 
 router.get(
@@ -37,6 +31,7 @@ router.get(
     }
   }
 );
+
 router.get(
   "/tv/popular",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -70,100 +65,53 @@ router.get(
   }
 );
 
-const get_tmdb_show_info = async (tv_show_id: string) => {
-  const fetch_response = await axios.get(
-    `${process.env.TMDB_URI}/tv/${tv_show_id}?api_key=${process.env.TMDB_API_KEY}`
-  );
-  const data = fetch_response.data as ShowType;
-  return data;
-};
-const get_imdb_show_info = async (tv_show_id: string) => {
-  const fetch_response = await axios.get(
-    `${process.env.IMDB_URI}/Title/${process.env.IMDB_API_KEY}/${tv_show_id}`
-  );
-  const data = fetch_response.data as IMDBShowInfoType;
-  return data;
-};
-
-const get_show_season_info = async (
-  tv_show_id: string,
-  season_number: number
-) => {
-  const fetch_response = await axios.get(
-    `${process.env.TMDB_URI}/tv/${tv_show_id}/season/${season_number}?api_key=${process.env.TMDB_API_KEY}`
-  );
-  const data = fetch_response.data as SeasonType;
-  return data;
-};
-
-const get_imdb_season_info = async (imdb_id: string, season_number: number) => {
-  const fetch_response = await axios.get(
-    `${process.env.IMDB_URI}/SeasonEpisodes/${process.env.IMDB_API_KEY}/${imdb_id}/${season_number}`
-  );
-
-  const data = fetch_response.data as ImdbSeasonType;
-  return data;
-};
-
-const get_omdb_season_info = async (imdb_id: string, season_number: number) => {
-  const fetch_response = await axios.get(
-    `${process.env.OMDB_URI}/?i=${imdb_id}&Season=${season_number}&apikey=${process.env.OMDB_API_KEY}`
-  );
-  const data = fetch_response.data as OmdbSeasonType;
-  return data;
-};
-const get_omdb_episode_info = async (
-  imdb_id: string,
-  season_number: string,
-  episode_number: string
-) => {
-  const fetch_response = await axios.get(
-    `${process.env.OMDB_URI}/?i=${imdb_id}&Season=${season_number}&Episode=${episode_number}&apikey=${process.env.OMDB_API_KEY}`
-  );
-  const data = fetch_response.data as OmdbEpisodeType;
-  return data;
-};
-
+/**
+ *
+ */
 router.get(
-  "/tv/:tv_show_id",
+  "/tv/:tmdb_show_id",
   async (req: Request, res: Response, next: NextFunction) => {
-    const { tv_show_id } = req.params;
+    const { tmdb_show_id } = req.params;
     try {
-      // get season info for all seasons
-      const imdb_id = await get_imdb_id(tv_show_id);
+      // get imdb id for show
+      const imdb_id = await get_imdb_id(tmdb_show_id);
 
+      // check if imdb id exists for show
       if (imdb_id) {
-        // get show info and number of seasons
+        // if imdb id exists
+
+        // get show info
         const tv_show_info = await get_imdb_show_info(imdb_id);
+
+        // get number of seasons
+        // ? may not be correct number
         const {
           tvSeriesInfo: { seasons },
         } = tv_show_info;
         let number_of_seasons = seasons.length;
-        console.log(seasons);
 
-        const imdb_episode_map = new Map<
-          string,
-          {
-            rating: number;
-            votes: number;
-          }
-        >();
+        // get info for each season
         const imdb_seasons_promises = [];
         for (let index = 1; index <= number_of_seasons; index++) {
           const imdb_season_info = get_imdb_season_info(imdb_id, index);
           imdb_seasons_promises.push(imdb_season_info);
         }
         let imdb_seasons = await Promise.all(imdb_seasons_promises);
+        // let imdb_seasons = imdb_seasons_promises;
+        console.log(imdb_seasons);
+
         imdb_seasons = imdb_seasons.filter(
           (seasons) => seasons.errorMessage === ""
         );
 
+        // modify number of seasons if incorrect
         number_of_seasons = imdb_seasons.length;
+
+        // modify episode rating to be 0 if none exists
         imdb_seasons.forEach((season) => {
           if (season.episodes) {
             season.episodes = season.episodes.map((ep) => {
               const { imDbRating, imDbRatingCount } = ep;
-              console.log(imDbRating, imDbRatingCount);
 
               return {
                 ...ep,
@@ -173,96 +121,6 @@ router.get(
             });
           }
         });
-        // let imdb_episodes: OmdbEpisodeType[] = [];
-
-        // for (let index = 1; index <= imdb_seasons.length; index++) {
-        //   let current_season = imdb_seasons[index - 1];
-        //   const { Episodes: episodes, Season: season_number } = current_season;
-        //   if (episodes) {
-        //     let imdb_episodes_promises = [];
-        //     for (let j = 0; j < episodes.length; j++) {
-        //       const { Episode: episode_number } = episodes[j];
-
-        //       const imdb_episode_info = get_omdb_episode_info(
-        //         imdb_id,
-        //         season_number,
-        //         episode_number
-        //       );
-        //       imdb_episodes_promises.push(imdb_episode_info);
-        //     }
-        //     imdb_episodes.push(...(await Promise.all(imdb_episodes_promises)));
-        //   }
-        // }
-        // console.log(imdb_seasons);
-        // imdb_episodes.forEach((episode) => {
-        //   const {
-        //     Season: season_number,
-        //     Episode: episode_number,
-        //     imdbRating,
-        //     imdbVotes,
-        //   } = episode;
-        //   console.log(imdbRating);
-
-        //   imdb_episode_map.set(`${season_number}-${episode_number}`, {
-        //     rating: parseFloat(imdbRating),
-        //     votes: parseFloat(imdbVotes),
-        //   });
-        // });
-        console.log(imdb_seasons);
-
-        // imdb_seasons.forEach((season) => {
-        //   const { episodes } = season;
-        //   if (episodes) {
-        //     episodes.forEach((ep) => {
-        //       const {
-        //         episodeNumber,
-        //         imDbRating,
-        //         imDbRatingCount,
-        //         seasonNumber,
-        //       } = ep;
-
-        //       imdb_episode_map.set(`${seasonNumber}-${episodeNumber}`, {
-        //         rating: parseFloat(imDbRating),
-        //         votes: parseFloat(imDbRatingCount),
-        //       });
-        //     });
-        //   }
-        // });
-
-        // const promises = [];
-
-        // for (let index = 1; index <= number_of_seasons; index++) {
-        //   promises.push(get_show_season_info(tv_show_id, index));
-        // }
-        // let tv_show_all_seasons_info = await Promise.all(promises);
-        // // combine data to
-
-        // tv_show_all_seasons_info.forEach((season) => {
-        //   const { season_number, episodes } = season;
-
-        // if (episodes) {
-        //   episodes.forEach((ep) => {
-        //     let { episode_number, vote_average, vote_count } = ep;
-        //     const ep_map_index = `${season_number}-${episode_number}`;
-        //     const imdb_episode_info = imdb_episode_map.get(ep_map_index);
-
-        //     if (imdb_episode_info && !isNaN(imdb_episode_info.rating)) {
-        //       const combined_vote_count = vote_count + imdb_episode_info.votes;
-        //       const weight_vote_average =
-        //         (vote_count * vote_average +
-        //           imdb_episode_info.votes * imdb_episode_info.rating) /
-        //         combined_vote_count;
-        //       ep.vote_average = weight_vote_average;
-        //       ep.vote_count = combined_vote_count;
-        //     } else {
-        //       ep.vote_average = 0;
-        //       ep.vote_count = 0;
-        //       console.log(ep_map_index, imdb_episode_info);
-        //     }
-        //   });
-        // }
-        // });
-        console.log(imdb_id);
 
         const combinedData = {
           show_info: tv_show_info,
@@ -279,22 +137,6 @@ router.get(
     }
   }
 );
-
-const get_imdb_id = async (tmdb_id: string) => {
-  const fetch_response = await axios.get(
-    `${process.env.TMDB_URI}/tv/${tmdb_id}/external_ids?api_key=${process.env.TMDB_API_KEY}`
-  );
-  const data = fetch_response.data as ExternalIDsType;
-  return data.imdb_id;
-};
-const get_tmdb_id = async (imdb_id: string) => {
-  const fetch_response = await axios.get(
-    `${process.env.TMDB_URI}/find/${imdb_id}?api_key=${process.env.TMDB_API_KEY}&external_source=imdb_id`
-  );
-  const data = fetch_response.data as IMDBIDType;
-  const tmdb_id = data.tv_results[0].id;
-  return tmdb_id;
-};
 
 router.get(
   "/id/:imdb_id",
