@@ -6,6 +6,7 @@ import {
   IMDBShowInfoType,
   OmdbEpisodeType,
   OmdbSeasonType,
+  ResultType,
   SeasonType,
   ShowType,
 } from "../types";
@@ -84,4 +85,24 @@ export const get_omdb_episode_info = async (
   );
   const data = fetch_response.data as OmdbEpisodeType;
   return data;
+};
+export const get_real_shows = async (results: ResultType[]) => {
+  let results_map = new Map();
+  results.forEach((result, index) => {
+    results_map.set(index, result);
+  });
+
+  let promises = [];
+  for (const result of results) {
+    promises.push(get_imdb_id(result.id.toString()));
+  }
+  let isReal = await Promise.all(promises);
+
+  const real_results: ResultType[] = [];
+  isReal.forEach((result, index) => {
+    if (result !== null) {
+      real_results.push(results_map.get(index));
+    }
+  });
+  return real_results.sort((a, b) => b.popularity - a.popularity);
 };

@@ -4,9 +4,16 @@ import {
   get_imdb_id,
   get_imdb_season_info,
   get_imdb_show_info,
+  get_real_shows,
   get_tmdb_id,
 } from "../util/functions/api-functions";
-import { EpisodesType, ErrorType, SearchType, SeasonType } from "../util/types";
+import {
+  EpisodesType,
+  ErrorType,
+  ResultType,
+  SearchType,
+  SeasonType,
+} from "../util/types";
 
 const router = express.Router();
 
@@ -24,7 +31,9 @@ router.get(
       const fetch_response = await axios.get(
         `${process.env.TMDB_URI}/search/tv?api_key=${process.env.TMDB_API_KEY}&query=${tv_show_title}&page=${page}`
       );
-      const data = fetch_response.data as SearchType;
+      let data = fetch_response.data as SearchType;
+      data.results = await get_real_shows(data.results);
+
       return res.status(200).json(data);
     } catch (err) {
       return next({ errors: [], message: "", status: 500 } as ErrorType);
