@@ -36,7 +36,11 @@ router.get(
 
       return res.status(200).json(data);
     } catch (err) {
-      return next({ errors: [], message: "", status: 500 } as ErrorType);
+      return next({
+        errors: [],
+        message: "Unable to get search results from external API",
+        status: 500,
+      } as ErrorType);
     }
   }
 );
@@ -53,7 +57,11 @@ router.get(
       const data = fetch_response.data;
       return res.status(200).json(data);
     } catch (err) {
-      return next({ errors: [], message: "", status: 500 } as ErrorType);
+      return next({
+        errors: [],
+        message: "Unable to get popular shows from external API",
+        status: 500,
+      } as ErrorType);
     }
   }
 );
@@ -69,7 +77,11 @@ router.get(
       const data = fetch_response.data;
       return res.status(200).json(data);
     } catch (err) {
-      return next({ errors: [], message: "", status: 500 } as ErrorType);
+      return next({
+        errors: [],
+        message: "Unable to get top rated shows from external API",
+        status: 500,
+      } as ErrorType);
     }
   }
 );
@@ -142,7 +154,11 @@ router.get(
       }
     } catch (err) {
       console.log(err);
-      return next({ errors: [], message: "", status: 500 } as ErrorType);
+      return next({
+        errors: [],
+        message: "Unable to get show information from external API",
+        status: 500,
+      } as ErrorType);
     }
   }
 );
@@ -155,7 +171,11 @@ router.get(
       const tmdb_id = await get_tmdb_id(imdb_id);
       res.status(200).json({ tmdb_id });
     } catch (err) {
-      next({ message: "", status: 404, errors: [] });
+      next({
+        message: "Unable to get TMDb ID from external API",
+        status: 404,
+        errors: [],
+      });
     }
   }
 );
@@ -169,7 +189,11 @@ router.get(
       const imdb_id = await get_imdb_id(tv_show_id);
       return res.status(200).json(imdb_id);
     } catch (err) {
-      return next({ errors: [], message: "", status: 500 } as ErrorType);
+      return next({
+        errors: [],
+        message: "Unable to get IMDb ID from external API",
+        status: 500,
+      } as ErrorType);
     }
   }
 );
@@ -186,7 +210,11 @@ router.get(
       const data = fetch_response.data;
       return res.status(200).json(data);
     } catch (err) {
-      return next({ errors: [], message: "", status: 500 } as ErrorType);
+      return next({
+        errors: [],
+        message: "Unable to get show recommendations from external API",
+        status: 500,
+      } as ErrorType);
     }
   }
 );
@@ -201,7 +229,11 @@ router.get(
       const data = fetch_response.data as SeasonType;
       return res.status(200).json(data);
     } catch (err) {
-      return next({ errors: [], message: "", status: 500 } as ErrorType);
+      return next({
+        errors: [],
+        message: "Unable to get seasons information from external API",
+        status: 500,
+      } as ErrorType);
     }
   }
 );
@@ -217,7 +249,11 @@ router.get(
       const data = fetch_response.data as EpisodesType;
       return res.status(200).json(data);
     } catch (err) {
-      return next({ errors: [], message: "", status: 500 } as ErrorType);
+      return next({
+        errors: [],
+        message: "Unable to get episode information from external API",
+        status: 500,
+      } as ErrorType);
     }
   }
 );
