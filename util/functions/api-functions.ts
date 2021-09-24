@@ -57,6 +57,10 @@ export const get_imdb_season_info = async (
   imdb_id: string,
   season_number: number
 ) => {
+  // console.log(
+  //   `${process.env.IMDB_URI}/SeasonEpisodes/${process.env.IMDB_API_KEY}/${imdb_id}/${season_number}`
+  // );
+
   const fetch_response = await axios.get(
     `${process.env.IMDB_URI}/SeasonEpisodes/${process.env.IMDB_API_KEY}/${imdb_id}/${season_number}`
   );
