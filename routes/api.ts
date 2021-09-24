@@ -100,40 +100,39 @@ router.get(
 
         // get show info
         let tv_show_info = await get_imdb_show_info(imdb_id);
-        const tv_show_info_tmdb = await get_tmdb_show_info(tmdb_show_id);
+        // const tv_show_info_tmdb = await get_tmdb_show_info(tmdb_show_id);
 
-        let number_of_seasons = tv_show_info_tmdb.number_of_seasons;
+        // let number_of_seasons = tv_show_info_tmdb.number_of_seasons;
 
         // get info for each season
-        const imdb_seasons_promises = [];
-        for (let index = 1; index <= number_of_seasons; index++) {
-          const imdb_season_info = get_imdb_season_info(imdb_id, index);
-          imdb_seasons_promises.push(imdb_season_info);
-        }
-        let imdb_seasons = await Promise.all(imdb_seasons_promises);
+        // const imdb_seasons_promises = [];
+        // for (let index = 1; index <= number_of_seasons; index++) {
+        //   const imdb_season_info = get_imdb_season_info(imdb_id, index);
+        //   imdb_seasons_promises.push(imdb_season_info);
+        // }
+        // let imdb_seasons = await Promise.all(imdb_seasons_promises);
 
         // loop til error
-        // const imdb_seasons_promises = [];
-        // let current_season = 1;
-        // let isFinished = false;
-        // while (!isFinished) {
-        //   const imdb_season_info = await get_imdb_season_info(
-        //     imdb_id,
-        //     current_season
-        //   );
-        //   if (imdb_season_info.errorMessage !== "") {
-        //     isFinished = true;
-        //     console.log("failed");
+        const imdb_seasons_promises = [];
+        let current_season = 1;
+        let isFinished = false;
+        while (!isFinished) {
+          const imdb_season_info = await get_imdb_season_info(
+            imdb_id,
+            current_season
+          );
+          if (imdb_season_info.errorMessage !== "") {
+            isFinished = true;
+            console.log("End of seasons");
+            break;
+          }
+          imdb_seasons_promises.push(imdb_season_info);
+          console.log(current_season);
+          current_season++;
+          // console.log(imdb_season_info);
+        }
 
-        //     break;
-        //   }
-        //   imdb_seasons_promises.push(imdb_season_info);
-        //   current_season++;
-        //   console.log(current_season);
-        //   // console.log(imdb_season_info);
-        // }
-
-        // let imdb_seasons = imdb_seasons_promises;
+        let imdb_seasons = imdb_seasons_promises;
         // let imdb_seasons = imdb_seasons_promises;
         // console.log(imdb_seasons);
 
