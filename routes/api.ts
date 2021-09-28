@@ -87,6 +87,84 @@ router.get(
  *
  */
 router.get(
+  "/tv/:imdb_show_id/seasons",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const imdb_id = req.params.imdb_show_id;
+    try {
+      // if imdb id exists
+
+      // get show info
+      // const tv_show_info_tmdb = await get_tmdb_show_info(tmdb_show_id);
+
+      // let number_of_seasons = tv_show_info_tmdb.number_of_seasons;
+
+      // get info for each season
+      // const imdb_seasons_promises = [];
+      // for (let index = 1; index <= number_of_seasons; index++) {
+      //   const imdb_season_info = get_imdb_season_info(imdb_id, index);
+      //   imdb_seasons_promises.push(imdb_season_info);
+      // }
+      // let imdb_seasons = await Promise.all(imdb_seasons_promises);
+
+      // loop til error
+      const imdb_seasons_promises = [];
+      let current_season = 1;
+      let isFinished = false;
+      while (!isFinished) {
+        const imdb_season_info = await get_imdb_season_info(
+          imdb_id,
+          current_season
+        );
+        if (imdb_season_info.errorMessage !== "") {
+          isFinished = true;
+          console.log("End of seasons");
+          break;
+        }
+        imdb_seasons_promises.push(imdb_season_info);
+        console.log(current_season);
+        current_season++;
+        // console.log(imdb_season_info);
+      }
+
+      let imdb_seasons = imdb_seasons_promises;
+      // let imdb_seasons = imdb_seasons_promises;
+      // console.log(imdb_seasons);
+
+      imdb_seasons = imdb_seasons.filter(
+        (seasons) => seasons.errorMessage === ""
+      );
+
+      // modify episode rating to be 0 if none exists
+      imdb_seasons.forEach((season) => {
+        if (season.episodes) {
+          season.episodes = season.episodes.map((ep) => {
+            const { imDbRating, imDbRatingCount } = ep;
+
+            return {
+              ...ep,
+              imDbRating:
+                imDbRating == "" ? 0 : parseFloat(imDbRating as string),
+            };
+          });
+        }
+      });
+
+      const combinedData = {
+        seasons: imdb_seasons,
+      };
+
+      return res.status(200).json(combinedData);
+    } catch (err) {
+      console.log(err);
+      return next({
+        errors: [],
+        message: "Unable to get show information from external API",
+        status: 500,
+      } as ErrorType);
+    }
+  }
+);
+router.get(
   "/tv/:tmdb_show_id",
   async (req: Request, res: Response, next: NextFunction) => {
     const { tmdb_show_id } = req.params;
@@ -100,67 +178,9 @@ router.get(
 
         // get show info
         let tv_show_info = await get_imdb_show_info(imdb_id);
-        // const tv_show_info_tmdb = await get_tmdb_show_info(tmdb_show_id);
-
-        // let number_of_seasons = tv_show_info_tmdb.number_of_seasons;
-
-        // get info for each season
-        // const imdb_seasons_promises = [];
-        // for (let index = 1; index <= number_of_seasons; index++) {
-        //   const imdb_season_info = get_imdb_season_info(imdb_id, index);
-        //   imdb_seasons_promises.push(imdb_season_info);
-        // }
-        // let imdb_seasons = await Promise.all(imdb_seasons_promises);
-
-        // loop til error
-        const imdb_seasons_promises = [];
-        let current_season = 1;
-        let isFinished = false;
-        while (!isFinished) {
-          const imdb_season_info = await get_imdb_season_info(
-            imdb_id,
-            current_season
-          );
-          if (imdb_season_info.errorMessage !== "") {
-            isFinished = true;
-            console.log("End of seasons");
-            break;
-          }
-          imdb_seasons_promises.push(imdb_season_info);
-          console.log(current_season);
-          current_season++;
-          // console.log(imdb_season_info);
-        }
-
-        let imdb_seasons = imdb_seasons_promises;
-        // let imdb_seasons = imdb_seasons_promises;
-        // console.log(imdb_seasons);
-
-        imdb_seasons = imdb_seasons.filter(
-          (seasons) => seasons.errorMessage === ""
-        );
-
-        // modify number of seasons if incorrect
-        tv_show_info.tvEpisodeInfo = imdb_seasons.length;
-
-        // modify episode rating to be 0 if none exists
-        imdb_seasons.forEach((season) => {
-          if (season.episodes) {
-            season.episodes = season.episodes.map((ep) => {
-              const { imDbRating, imDbRatingCount } = ep;
-
-              return {
-                ...ep,
-                imDbRating:
-                  imDbRating == "" ? 0 : parseFloat(imDbRating as string),
-              };
-            });
-          }
-        });
 
         const combinedData = {
           show_info: tv_show_info,
-          seasons: imdb_seasons,
         };
 
         return res.status(200).json(combinedData);
