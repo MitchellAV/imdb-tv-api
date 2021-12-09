@@ -63,6 +63,26 @@ router.get(
   }
 );
 router.get(
+  "/tv/trending/week",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const page = req.query.page || 1;
+
+    try {
+      const fetch_response = await axios.get(
+        `${process.env.TMDB_URI}/trending/tv/week?api_key=${process.env.TMDB_API_KEY}&page=${page}`
+      );
+      const data = fetch_response.data;
+      return res.status(200).json(data);
+    } catch (err) {
+      return next({
+        errors: [],
+        message: "Unable to get trending shows from external API",
+        status: 500,
+      } as ErrorType);
+    }
+  }
+);
+router.get(
   "/tv/top_rated",
   async (req: Request, res: Response, next: NextFunction) => {
     const page = req.query.page || 1;
