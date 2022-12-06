@@ -5,10 +5,10 @@ import { ErrorType } from "./util/types";
 
 import apiRouter from "./routes/api";
 const app = express();
-let origin = "http://localhost:3000";
-if (process.env.NODE_ENV == "production")
-  origin = "https://www.imdb-tv-graph.mitchellvictoriano.com";
-app.use(cors({ origin: origin }));
+// let origin = "http://localhost:3000";
+// if (process.env.NODE_ENV == "production")
+//   origin = "https://www.imdb-tv-graph.mitchellvictoriano.com";
+app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
